@@ -114,19 +114,21 @@ int main(int argc, const char** argv)
 
 
 					Mat test;
-					//int a = 0, b = 0;
-					//for (int y = avgPtM.y - 100 ; y < avgPtM.y + 100; y++)
-					//	for (int x = avgPtM.x - 80 ; x < avgPtM.x + 170 ; x++)
-					//	{
-					//		test.at<int>(a, b) = image.at<int>(x, y);
-					//		if (a<200)
-					//			a++;
-					//		else
-					//		{
-					//			a = 0;
-					//			b++;
-					//		}
+					
+					//int nChannels = frame.channels();
+					//int nRows = frame.rows;
+					//int nCols = frame.cols* nChannels;
+					//int nStep = frame.step;
+
+					//for (int j = 0; j < nRows; j++) {
+					//	uchar* frameData = frame.ptr<uchar>(j);
+					//	uchar* roiData = image_roi.ptr<uchar>(j);
+					//	for (int i = 0; i < nCols; i++) {
+					//		roiData[nChannels*i + 2] = frameData[nChannels*i + 2];
+					//		roiData[nChannels*i + 1] = frameData[nChannels*i + 1];
+					//		roiData[nChannels*i + 0] = frameData[nChannels*i + 0];
 					//	}
+					//}
 
 					//顯示綠框
 					Rect region_of_interest = Rect(CHKRGN(avgPtM.x - 5), CHKRGN(avgPtM.y - 5), 10, 10);
