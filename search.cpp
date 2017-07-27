@@ -1,12 +1,5 @@
 #include "stdafx.h"  
-#include "fftw3.h"
-#include "Header.h"
 #include <iostream>  
-#include <conio.h>
-#include <string>
-#include <queue>
-#include <fstream>  
-#include <ctype.h>
 #include <opencv2/opencv.hpp>  
 #include <dlib/image_processing/frontal_face_detector.h>  
 #include <dlib/image_processing/render_face_detections.h>  
@@ -15,145 +8,129 @@
 #include <dlib/image_io.h>
 #include <dlib/opencv.h>
 
+using namespace dlib;
+using namespace cv;
+using namespace std;
+
 #ifndef __SMOOTH_ROI__
 #define __SMOOTH_ROI__
 
 #define LIMIT_SMOOTH_COUNT 7 //設定要smooth幾個frame
 #endif
 
-using namespace dlib;
-using namespace cv;
-using namespace std;
-
 CvPoint SmoothROI(CvPoint2D32f newPt);
-
 #define CHKRGN(pos) pos<0?0:pos
 
-Mat image, roiImage;
-bool isFacedetected = false;
-
-int main(int argc, const char** argv)
+int main()
 {
 	try //如果沒找到輪廓不會當機
 	{
 		double fps;
 		char string[10];
-		double times = 0;
+		double time = 0;
 
 		int MRoiX = 0; //額頭Roi中心 (x, )
 		int MRoiY = 0; //額頭Roi中心 ( ,y)
+		CvPoint avgPtM;
 
+		Mat img;
 		VideoCapture cap(0);
-
-		int totalFrameNumber = cap.get(CV_CAP_PROP_FRAME_COUNT);
-		cap.set(CV_CAP_PROP_FRAME_WIDTH, 640); //設定寬
-		cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480); //設定高
+		image_window win;
 
 		// 載入學習檔
 		frontal_face_detector detector = get_frontal_face_detector();
 		shape_predictor pose_model;
 		deserialize("shape_predictor_68_face_landmarks.dat") >> pose_model;
 
-		Mat frame;
-		bool paused = false;
+		bool _isInit = false;
+		Rect _Pos;
 
-		for(;;)
+		for (;;)
 		{
-			times = (double)getTickCount();
-			if (!paused)
+			time = (double)getTickCount();
+			if (waitKey(50) == 30) { break; }
+
+			cap >> img;
+
+			cv_image<bgr_pixel> cimg;
+
+
+			//判斷第一次人臉位置(預設只找到一個人臉)
+			if (_isInit == false)
 			{
-				cap >> frame;
-				if (frame.empty())
-					break;
-			}
+				//給定整張影像
+				cimg = cv_image<bgr_pixel>(img);
 
-			frame.copyTo(image);
+				//偵測人臉
+				std::vector<dlib::rectangle> faces = detector(cimg);
 
-			if (!paused)
-			{
-				cv_image<bgr_pixel> cimage; //原本的640*480
-				cv_image<bgr_pixel> cimage2;//搜尋框
-				
-				if (isFacedetected == false) 
-				{
-					cimage=image;
-					isFacedetected = true;
-				}
-				else
-				{
-					cimage2=roiImage;
-				}
-
-				// Detect faces 
-				std::vector<dlib::rectangle> faces = detector(cimage);
-				std::vector<dlib::rectangle> faces2 = detector(cimage2);
 				// Find the pose of each face.
 				full_object_detection shape;
 				for (unsigned short i = 0; i < faces.size(); ++i)
 				{
-					shape = pose_model(cimage, faces[i]);
+					shape = pose_model(cimg, faces[i]);
+					//SHAPE 代表找到的人臉位置資訊
 
-					//設定感興趣空間
 					point pt39 = shape.part(39); //內眼角
 					point pt42 = shape.part(42); //內眼角
 					point pt33 = shape.part(33); //鼻頭
 
-					int CenterX = (pt42.x() + pt39.x()); //印堂
-					int CenterY = (pt42.y() + pt39.y()); //印堂
+					int CenterX = (pt42.x() + pt39.x())/2; //印堂
+					int CenterY = (pt42.y() + pt39.y())/2; //印堂
 
 					MRoiX = CenterX - pt33.x();
 					MRoiY = CenterY - pt33.y();
 
 					//===========
 					CvPoint2D32f newPtM = Point(MRoiX, MRoiY);
-					CvPoint avgPtM = SmoothROI(newPtM);
+					avgPtM = SmoothROI(newPtM);
 
 					if (avgPtM.x == 0 && avgPtM.y == 0) continue;
-
-					Mat roi = image(Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250));
-
-
-					Mat test;
 					
-					//int nChannels = frame.channels();
-					//int nRows = frame.rows;
-					//int nCols = frame.cols* nChannels;
-					//int nStep = frame.step;
-
-					//for (int j = 0; j < nRows; j++) {
-					//	uchar* frameData = frame.ptr<uchar>(j);
-					//	uchar* roiData = image_roi.ptr<uchar>(j);
-					//	for (int i = 0; i < nCols; i++) {
-					//		roiData[nChannels*i + 2] = frameData[nChannels*i + 2];
-					//		roiData[nChannels*i + 1] = frameData[nChannels*i + 1];
-					//		roiData[nChannels*i + 0] = frameData[nChannels*i + 0];
-					//	}
-					//}
-
-					//顯示綠框
-					Rect region_of_interest = Rect(CHKRGN(avgPtM.x - 5), CHKRGN(avgPtM.y - 5), 10, 10);
-					cv::rectangle(image, region_of_interest, Scalar(0, 255, 0), 1, 8, 0);
-					
-					times = ((double)getTickCount() - times) / getTickFrequency();
-					fps = 1.0 / times;
-					sprintf(string, "%.1f", fps);
-					std::string fpsString("FPS:");
-					fpsString += string;
-					putText(roi, fpsString, Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 255, 255));
-
-					roiImage = roi.clone();
-					imshow("", roi);
 				}
 
+				//------將 _Pos 放入人臉位置資訊 (左上x,y , 中心等)
+				_Pos = Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250);
+
+
+				_isInit = true;
 			}
+			else
+			{
+				//-------將 整張影像(img) 設定在ROI(_Pos+?????)的範圍
+				//-------將設定好ROI的img copy 到 roiImg內
 
-			imshow("Demo", frame);
+				Mat roiImg(_Pos.height, _Pos.width, CV_8UC3);
 
-			char c = (char)waitKey(10);
-			if (c == 27)
-				break;
 
-			fix(c, paused);
+				img.copyTo(roiImg);
+
+				cimg = cv_image<bgr_pixel>(roiImg);
+
+				// Detect faces 
+				std::vector<dlib::rectangle> faces = detector(cimg);
+
+				// Find the pose of each face.
+				full_object_detection shape;
+				for (unsigned short i = 0; i < faces.size(); ++i)
+				{
+					shape = pose_model(cimg, faces[i]);
+
+					time = ((double)getTickCount() - time) / getTickFrequency();
+					fps = 1.0 / time;
+					sprintf(string, "%.2f", fps);
+					std::string fpsString("FPS:");
+					fpsString += string;
+					putText(img, fpsString, Point(5, 20), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(255, 255, 255));
+				}
+				//將 _Pos 放入人臉位置資訊 (左上x,y , 中心等)，但要記得再位置上做shift(人臉位置加上 _Pos.LeftTop Position)
+			}
+			
+
+			win.clear_overlay(); //畫面清空
+			win.set_image(cimg); //顯示
+			win.set_title("LIVE"); //視窗名稱
+//			win.add_overlay(render_face_detections(shape)); //畫輪廓
 		}
 	}
 
