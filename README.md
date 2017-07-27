@@ -1,13 +1,13 @@
 #include "stdafx.h"  <br />
 #include "fftw3.h"<br />
 #include "Header.h"<br />
-#include <iostream>  
-#include <conio.h>
-#include <string>
-#include <queue>
-#include <fstream>  
-#include <ctype.h>
-#include <opencv2/opencv.hpp>  
+#include <iostream> <br />
+#include <conio.h><br />
+#include <string><br />
+#include <queue><br />
+#include <fstream>  <br />
+#include <ctype.h><br />
+#include <opencv2/opencv.hpp> <br /> 
 #include <dlib/image_processing/frontal_face_detector.h>  
 #include <dlib/image_processing/render_face_detections.h>  
 #include <dlib/image_processing.h>
