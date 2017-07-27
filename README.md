@@ -1,6 +1,6 @@
 #include "stdafx.h"  <br />
-#include "fftw3.h"
-#include "Header.h"
+#include "fftw3.h"<br />
+#include "Header.h"<br />
 #include <iostream>  
 #include <conio.h>
 #include <string>
