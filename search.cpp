@@ -18,7 +18,7 @@
 #ifndef __SMOOTH_ROI__
 #define __SMOOTH_ROI__
 
-#define LIMIT_SMOOTH_COUNT 7 //³]©w­nsmooth´X­Óframe
+#define LIMIT_SMOOTH_COUNT 7 //è¨­å®šè¦smoothå¹¾å€‹frame
 #endif
 
 using namespace dlib;
@@ -34,22 +34,22 @@ bool isFacedetected = false;
 
 int main(int argc, const char** argv)
 {
-	try //¦pªG¨S§ä¨ì½ü¹ø¤£·|·í¾÷
+	try //å¦‚æœæ²’æ‰¾åˆ°è¼ªå»“ä¸æœƒç•¶æ©Ÿ
 	{
 		double fps;
 		char string[10];
 		double times = 0;
 
-		int MRoiX = 0; //ÃBÀYRoi¤¤¤ß (x, )
-		int MRoiY = 0; //ÃBÀYRoi¤¤¤ß ( ,y)
+		int MRoiX = 0; //é¡é ­Roiä¸­å¿ƒ (x, )
+		int MRoiY = 0; //é¡é ­Roiä¸­å¿ƒ ( ,y)
 
 		VideoCapture cap(0);
 
 		int totalFrameNumber = cap.get(CV_CAP_PROP_FRAME_COUNT);
-		cap.set(CV_CAP_PROP_FRAME_WIDTH, 640); //³]©w¼e
-		cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480); //³]©w°ª
+		cap.set(CV_CAP_PROP_FRAME_WIDTH, 640); //è¨­å®šå¯¬
+		cap.set(CV_CAP_PROP_FRAME_HEIGHT, 480); //è¨­å®šé«˜
 
-		// ¸ü¤J¾Ç²ßÀÉ
+		// è¼‰å…¥å­¸ç¿’æª”
 		frontal_face_detector detector = get_frontal_face_detector();
 		shape_predictor pose_model;
 		deserialize("shape_predictor_68_face_landmarks.dat") >> pose_model;
@@ -71,8 +71,8 @@ int main(int argc, const char** argv)
 
 			if (!paused)
 			{
-				cv_image<bgr_pixel> cimage; //­ì¥»ªº640*480
-				cv_image<bgr_pixel> cimage2;//·j´M®Ø
+				cv_image<bgr_pixel> cimage; //åŸæœ¬çš„640*480
+				cv_image<bgr_pixel> cimage2;//æœå°‹æ¡†
 				
 				if (isFacedetected == false) 
 				{
@@ -81,7 +81,7 @@ int main(int argc, const char** argv)
 				}
 				else
 				{
-					
+					cimage2=roiImage;
 				}
 
 				// Detect faces 
@@ -93,13 +93,13 @@ int main(int argc, const char** argv)
 				{
 					shape = pose_model(cimage, faces[i]);
 
-					//³]©w·P¿³½ìªÅ¶¡
-					point pt39 = shape.part(39); //¤º²´¨¤
-					point pt42 = shape.part(42); //¤º²´¨¤
-					point pt33 = shape.part(33); //»óÀY
+					//è¨­å®šæ„Ÿèˆˆè¶£ç©ºé–“
+					point pt39 = shape.part(39); //å…§çœ¼è§’
+					point pt42 = shape.part(42); //å…§çœ¼è§’
+					point pt33 = shape.part(33); //é¼»é ­
 
-					int CenterX = (pt42.x() + pt39.x()); //¦L°ó
-					int CenterY = (pt42.y() + pt39.y()); //¦L°ó
+					int CenterX = (pt42.x() + pt39.x()); //å°å ‚
+					int CenterY = (pt42.y() + pt39.y()); //å°å ‚
 
 					MRoiX = CenterX - pt33.x();
 					MRoiY = CenterY - pt33.y();
@@ -128,7 +128,7 @@ int main(int argc, const char** argv)
 					//		}
 					//	}
 
-					//Åã¥Üºñ®Ø
+					//é¡¯ç¤ºç¶ æ¡†
 					Rect region_of_interest = Rect(CHKRGN(avgPtM.x - 5), CHKRGN(avgPtM.y - 5), 10, 10);
 					cv::rectangle(image, region_of_interest, Scalar(0, 255, 0), 1, 8, 0);
 					
