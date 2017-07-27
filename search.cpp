@@ -215,7 +215,7 @@ int main(int argc, const char** argv)
 					}
 					//將 _Pos 放入人臉位置資訊 (左上x,y , 中心等)，但要記得再位置上做shift(人臉位置加上 _Pos.LeftTop Position)
 
-					_Pos = Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250);
+					_Pos = Rect(CHKRGN(avgPtM.x - 100)+_Pos.x, CHKRGN(avgPtM.y - 80)+_Pos.y, 200, 250);
 
 
 					//_Pos = img(Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250));
