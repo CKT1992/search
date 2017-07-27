@@ -124,7 +124,7 @@ int main(int argc, const char** argv)
 
 					//------將 _Pos 放入人臉位置資訊 (左上x,y , 中心等)
 //					_PPos = img(Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250));
-					_Pos = Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250);
+					_Pos = Rect(CHKRGN(avgPtM.x - 100)+ _Pos.x, CHKRGN(avgPtM.y - 80)+ _Pos.y, 200, 250);
 
 					_isInit = true;
 				}
