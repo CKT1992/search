@@ -60,7 +60,10 @@ int main(int argc, const char** argv)
 		deserialize("shape_predictor_68_face_landmarks.dat") >> pose_model;
 
 		bool _isInit = false;
-		Mat _Pos;
+//		Mat _Pos;
+
+		Mat _PPos;
+		Rect _Pos;
 
 		bool paused = false;
 
@@ -105,8 +108,8 @@ int main(int argc, const char** argv)
 						point pt42 = shape.part(42); //內眼角
 						point pt33 = shape.part(33); //鼻頭
 
-						int CenterX = (pt42.x() + pt39.x()) / 2; //印堂
-						int CenterY = (pt42.y() + pt39.y()) / 2; //印堂
+						int CenterX = (pt42.x() + pt39.x()) ; //印堂
+						int CenterY = (pt42.y() + pt39.y()) ; //印堂
 
 						MRoiX = CenterX - pt33.x();
 						MRoiY = CenterY - pt33.y();
@@ -120,9 +123,8 @@ int main(int argc, const char** argv)
 					}
 
 					//------將 _Pos 放入人臉位置資訊 (左上x,y , 中心等)
-					_Pos = img(Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250));
-//					_Pos = Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250);
-
+					_PPos = img(Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250));
+					_Pos = Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250);
 
 					_isInit = true;
 				}
@@ -131,20 +133,20 @@ int main(int argc, const char** argv)
 					//-------將 整張影像(img) 設定在ROI(_Pos+?????)的範圍
 					//-------將設定好ROI的img copy 到 roiImg內
 
-					Mat test(_Pos.rows, _Pos.cols, img.type());
-					int nChannels = _Pos.channels();
-					int nRows = _Pos.rows;
-					int nCols = _Pos.cols;
+					//Mat test(_Pos.rows, _Pos.cols, img.type());
+					//int nChannels = _Pos.channels();
+					//int nRows = _Pos.rows;
+					//int nCols = _Pos.cols;
 
-					for (int j = 0; j < nRows; j++) {
-						uchar* srcData = _Pos.ptr<uchar>(j);
-						uchar* dstData = test.ptr<uchar>(j);
-						for (int i = 0; i < nCols; i++) {
-							*dstData++ = *srcData++;
-						}
-					}
+					//for (int j = 0; j < nRows; j++) {
+					//	uchar* srcData = _Pos.ptr<uchar>(j);
+					//	uchar* dstData = test.ptr<uchar>(j);
+					//	for (int i = 0; i < nCols; i++) {
+					//		*dstData++ = *srcData++;
+					//	}
+					//}
 
-					img = test;
+					img = img(_Pos);
 
 					Mat roiImg;
 
@@ -165,8 +167,15 @@ int main(int argc, const char** argv)
 						point pt42 = shape.part(42); //內眼角
 						point pt33 = shape.part(33); //鼻頭
 
-						int CenterX = (pt42.x() + pt39.x()) / 2; //印堂
-						int CenterY = (pt42.y() + pt39.y()) / 2; //印堂
+						//頭轉角度判斷
+						point pt2 = shape.part(2); //右臉顴骨
+						point pt36 = shape.part(36); //右外眼角
+						point pt14 = shape.part(14); //左臉顴骨
+						point pt45 = shape.part(45); //左外眼角
+						point pt30 = shape.part(30); //鼻尖
+
+						int CenterX = (pt42.x() + pt39.x()) ; //印堂
+						int CenterY = (pt42.y() + pt39.y()) ; //印堂
 
 						MRoiX = CenterX - pt33.x();
 						MRoiY = CenterY - pt33.y();
@@ -177,6 +186,26 @@ int main(int argc, const char** argv)
 
 						if (avgPtM.x == 0 && avgPtM.y == 0) continue;
 
+						if (pt14.x() - pt30.x() <= 40)
+						{
+							CvPoint2D32f newPtR = Point(RRoiX, RRoiY);
+							CvPoint avgPtR = SmoothROI(newPtR);
+							Rect R_region_of_interest = Rect(CHKRGN(avgPtR.x - 5), CHKRGN(avgPtR.y - 5), 10, 10);
+							cv::rectangle(img, R_region_of_interest, Scalar(0, 255, 0), 1, 8, 0);
+						}
+						else if (pt30.x() - pt2.x() <= 40)
+						{
+							CvPoint2D32f newPtL = Point(LRoiX, LRoiY + 70);
+							CvPoint avgPtL = SmoothROI(newPtL);
+							Rect L_region_of_interest = Rect(CHKRGN(avgPtL.x - 5), CHKRGN(avgPtL.y - 5), 10, 10);
+							cv::rectangle(img, L_region_of_interest, Scalar(0, 255, 0), 1, 8, 0);
+						}
+						else
+						{
+							Rect region_of_interest = Rect(CHKRGN(avgPtM.x - 5), CHKRGN(avgPtM.y - 5), 10, 10);
+							cv::rectangle(img, region_of_interest, Scalar(0, 255, 0), 1, 8, 0);
+						}
+
 						times = ((double)getTickCount() - times) / getTickFrequency();
 						fps = 1.0 / times;
 						sprintf(string, "%.2f", fps);
@@ -186,14 +215,16 @@ int main(int argc, const char** argv)
 					}
 					//將 _Pos 放入人臉位置資訊 (左上x,y , 中心等)，但要記得再位置上做shift(人臉位置加上 _Pos.LeftTop Position)
 
-					//_Pos = Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250);
-					_Pos = img(Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250));
+					_Pos = Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250);
+
+
+					//_Pos = img(Rect(CHKRGN(avgPtM.x - 100), CHKRGN(avgPtM.y - 80), 200, 250));
 				}
-					imshow("1", img);
+					//imshow("1", img);
 				
 //				imshow("123", img_roi);
 
-			//			imshow("Demo", frame);
+			imshow("Demo", img);
 
 			char c = (char)waitKey(10);
 			if (c == 27)
